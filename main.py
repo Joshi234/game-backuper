@@ -72,7 +72,33 @@ def backup(dir):
     else:
         print("Succesfully copied "+str(a)+" games")
 load()
+def restore(game_name,backup_dir):
+        try:
+            game_list[game_name]
+            if(game_list[game_name][0]=="~"):
+                try:
+                
+                    shutil.rmtree(home+game_list[game_name][1:])
+                except:
+                    p=0
 
+                try:
+                    shutil.copytree(backup_dir+r"/"+game_name,home+game_list[game_name][1:])
+                except:
+                    print("Can't find the backup path")
+            else:
+                         
+                try:
+                    shutil.rmtree(home+game_list[game_name])
+                except:
+                    p=0
+                try:
+                    shutil.copytree(backup_dir+r"/"+game_name,game_list[game_name])
+                except:
+                    print("Can't find the backup path")
+            print("Succesfully recovered game "+game_name)
+        except:
+            print("Could not find your game "+game_name)
 while True:
     a=str(input(">>> "))
     if(a=="update"):
@@ -84,6 +110,8 @@ update: updates the game list
 add: adds a game to the game list. If you want to contribute send your game_list.json to Joshi234#9828 or do a pull request on github
 quit/exit: Closes program
 backup: Backes up every program
+restore: restores game
+restore_everything: restores every game in a backup dir
 ''')
     elif(a=="add"):
         add_game(str(input("Game Name: ")),str(input("Dir: ")))
@@ -96,3 +124,12 @@ backup: Backes up every program
     elif(a=="backup"):
         backup_dir=str(input("Please enter a dir where you want to backup your saves to: "))
         backup(backup_dir)
+    elif(a=="restore"):
+        restore(str(input("Game Name: ")),str(input("Backup dir: ")))
+        
+    elif(a=="restore_everything"):
+        backup_dir=str(input("Backup dir: "))
+        for i in game_list:
+            if(os.path.isdir(backup_dir+r'/'+i)):
+                str(input("Are you sure you want to recover?: "+i))
+                restore(i,backup_dir)
