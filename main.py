@@ -52,14 +52,25 @@ def load():
         load_game_list()
     
 def backup(dir):
+    a=0
     for i in game_list:
-   
-        if(game_list[i][0]=="~"):
+        try:
             
-            shutil.copytree(home+game_list[i][1:],dir+r"\\"+i)
-        else:
-            shutil.copytree(game_list[i],dir+r"\\"+i)
+            if(game_list[i][0]=="~"):
+                
+                shutil.copytree(home+game_list[i][1:],dir+r"\\"+i)
+                
+            else:
+                shutil.copytree(game_list[i],dir+r"\\"+i)
+            print("Finished copying game save "+i)
+            a=a+1
 
+        except:
+            e=0
+    if(a==0):
+        print("Invalid File Location or no game installed that is currently supported")
+    else:
+        print("Succesfully copied "+str(a)+" games")
 load()
 
 while True:
