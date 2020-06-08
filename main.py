@@ -47,12 +47,10 @@ def load_game_list():
     except:
         print("Error while reading local json file")
 def load():
-    try:
+
         first_run()
         load_game_list()
-    except error:
-        print(error)
-        str(input("wait"))
+    
 def backup(dir):
     for i in game_list:
    
