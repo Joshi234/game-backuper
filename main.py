@@ -2,10 +2,13 @@ import os
 import requests
 import json
 import sys
+import shutil
 cwd = os.getcwd()
 
-game_list=None
+game_list={}
 json_raw=""
+from os.path import expanduser
+home = expanduser("~")
 def download_file():
     global game_list
     print("Downloading Game List")
@@ -37,13 +40,26 @@ def add_game(name,dir):
     save_game_list()
     print("Succesfully added "+name)
 def load_game_list():
-    global game_list
-    game_list_raw=open(cwd+'/game_list.json',"r").read()
-    game_list=json.loads(game_list_raw)
+    try:
+        global game_list
+        game_list_raw=open(cwd+'/game_list.json',"r").read()
+        game_list=json.loads(game_list_raw)
+    except:
+        print("Error while reading local json file")
 def load():
     first_run()
     load_game_list()
+def backup(dir):
+    for i in game_list:
+   
+        if(game_list[i][0]=="~"):
+            
+            shutil.copytree(home+game_list[i][1:],dir+r"\\"+i)
+        else:
+            shutil.copytree(game_list[i],dir+r"\\"+i)
+
 load()
+
 while True:
     a=str(input(">>> "))
     if(a=="update"):
@@ -54,6 +70,7 @@ while True:
 update: updates the game list
 add: adds a game to the game list. If you want to contribute send your game_list.json to Joshi234#9828 or do a pull request on github
 quit/exit: Closes program
+backup: Backes up every program
 ''')
     elif(a=="add"):
         add_game(str(input("Game Name: ")),str(input("Dir: ")))
@@ -63,3 +80,6 @@ quit/exit: Closes program
         sys.exit()
     elif(a=="exit"):
         sys.exit()
+    elif(a=="backup"):
+        backup_dir=str(input("Please enter a dir where you want to backup your saves to: "))
+        backup(backup_dir)
