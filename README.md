@@ -8,9 +8,13 @@ It would be cool if you would add more games to the library so we can support mo
 
 # Here is a list of all commands:
 add: Adds Game
+
 backup: creates a backyup, asks first for the folder where
+
 update: downloads and saves the currently newest game_list.json !Overwrittes old file so if you added some own dirs it will be overwritten
+
 help: Shows help message
+
 quit/exit: closes program
 
 The entire project is currently very early in development so there is currently no feature to recover the files, you need to do that by hand.
