@@ -17,4 +17,8 @@ help: Shows help message
 
 quit/exit: closes program
 
-The entire project is currently very early in development so there is currently no feature to recover the files, you need to do that by hand.
+restore: restores game save
+
+restore_everything: restores every game save out of a backup dir
+
+The entire project is currently very early in development.
