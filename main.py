@@ -86,7 +86,7 @@ def backup(dir):
         
         print("Succesfully copied "+str(a)+" games")
     return a
-load()
+
 def restore(game_name,backup_dir):
         try:
           
@@ -124,13 +124,24 @@ def restore(game_name,backup_dir):
         except:
             print("Could not find your game "+game_name)
 class Application(tk.Frame):
+    def first_run_wi(self):
+        try:
+            open(cwd+'/game_list.json',"r").read()
+        except:
+            messagebox.showinfo("Info","Since this is the first time you are running this program we automatically download the newest game list. Later on you can update it with 'update game list'")
+            download_file()
+            save_game_list()
     def __init__(self, master=None):
+        self.first_run_wi()
+        load()
         super().__init__(master)
+       
         self.master = master
         self.master.title("Game Backer")
         self.master.minsize(300,150)
         self.pack()
         self.create_widgets()
+        
     def update_game_list_window(self):
         download_file()
         save_game_list()
