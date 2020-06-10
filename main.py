@@ -14,7 +14,7 @@ game_list={}
 json_raw=""
 from os.path import expanduser
 home = expanduser("~")
-version="1.2"
+version="1.3"
 config={"standardDir":None,"version":version,"steamId":None,"steamDir":r"C:\Program Files (x86)\Steam\userdata"}
 defaultConfig={"standardDir":None,"version":version,"steamId":None,"steamDir":r"C:\Program Files (x86)\Steam\userdata"}
 
