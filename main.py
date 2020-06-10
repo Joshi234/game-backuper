@@ -14,6 +14,15 @@ game_list={}
 json_raw=""
 from os.path import expanduser
 home = expanduser("~")
+version="1.2"
+config={"standardDir":None,"version":version,"steamId":None,"steamDir":r"C:\Program Files (x86)\Steam\userdata"}
+defaultConfig={"standardDir":None,"version":version,"steamId":None,"steamDir":r"C:\Program Files (x86)\Steam\userdata"}
+
+def getSteamUserId():
+
+    config['steamId']=os.listdir(r"C:\Program Files (x86)\Steam\userdata")[0]
+    saveConfig()
+
 def download_file():
     global game_list
     print("Downloading Game List")
@@ -60,10 +69,16 @@ def load_game_list():
     except:
         print("Error while reading local json file")
 def load():
-
         first_run()
         load_game_list()
-    
+def setConfig(name,value):
+    return None
+def saveConfig():
+    json_raw=json.dumps(config)
+    open(cwd+'/config.json',"w+").write(json_raw)
+def loadConfig():
+    global config
+    config=json.loads(open(cwd+"/config.json","r+").read())
 def backup(dir):
     a=0
     for i in game_list:
@@ -72,6 +87,9 @@ def backup(dir):
             if(game_list[i][0]=="~"):
                 
                 shutil.copytree(home+game_list[i][1:],dir+r"\\"+i)
+            elif(game_list[i][0]=="+"):
+                
+                shutil.copytree(config["steamDir"]+r"/"+config["steamId"]+r"/"+game_list[i][1:],dir+r"\\"+i)
                 
             else:
                 shutil.copytree(game_list[i],dir+r"\\"+i)
@@ -105,7 +123,20 @@ def restore(game_name,backup_dir):
                         return True
                     except:
                         print("Can't find the backup path")
-
+            elif(game_list[game_name][0]=="+"):
+                if(os.path.isdir(backup_dir+r"/"+game_name)):
+                    try:
+                        shutil.rmtree(config["steamDir"]+r"/"+config["steamId"]+r"/"+game_list[game_name][1:])
+                    except:
+                        p=0
+                    try:
+                        shutil.copytree(backup_dir+r"/"+game_name,config["steamDir"]+r"/"+config["steamId"]+r"/"+game_list[game_name][1:])
+                        return True
+                    except:
+                        print("There was an error while copieng save")
+                else:
+                    print("Cant find backup folder or backup")
+                
             else:
                 if(os.path.isdir(backup_dir+r"/"+game_name)):
                     try:
@@ -123,8 +154,26 @@ def restore(game_name,backup_dir):
             
         except:
             print("Could not find your game "+game_name)
+def resetConfig():
+    config=defaultConfig
+    saveConfig()
+def add_steam_game(name,appId):
+    game_list[name]="+"+appId
+    save_game_list()
 class Application(tk.Frame):
+    
     def first_run_wi(self):
+        try:
+            loadConfig()
+        except:
+            print("Creating config")
+            config=defaultConfig
+            try:
+                getSteamUserId()
+            except:
+                print("Couldn't find Steam User id")
+            saveConfig()
+            loadConfig()
         try:
             open(cwd+'/game_list.json',"r").read()
         except:
@@ -146,23 +195,52 @@ class Application(tk.Frame):
         download_file()
         save_game_list()
         messagebox.showinfo("Succes!","Succesfully updated the game list")
-    def add_game_window(self):
+    def options_save(self):
+        config["steamDir"]=self.steamDir.get()
         
-       
+        saveConfig()
+        messagebox.showinfo("Succes!","Succesfully saved config")
+    def options_window(self):
+
+        self.top=tk.Toplevel()
+        self.user_input=tk.StringVar(self.top)
+        self.top.title("Options")
+        
+        self.select_folder = tk.Button(self.top, text="Reset Steam Id",command=getSteamUserId ,width=25,font=font_smaller)
+        self.select_folder.pack()
+        self.steamDir=tk.StringVar(self.top)
+        self.steamDir.set(config["steamDir"])
+        self.top_text_steam=tk.Entry(master=self.top,font=font_smaller,textvariable=self.steamDir,width=25)
+        self.top_text_steam.pack()
+        self.select_folder = tk.Button(self.top, text="Reset config",command=resetConfig,width=25,font=font_smaller)
+        self.select_folder.pack()
+
+        self.save= tk.Button(self.top, text="Save",command=self.options_save,width=25,font=font_smaller)
+        self.save.pack()
+#steamDir
+        self.top_button_dismiss=tk.Button(self.top,text="Dismiss",command=self.top.destroy,font=font_smaller,width=25, fg="red")
+        self.top_button_dismiss.pack()
+    def add_game_window(self):
         self.title="Select game save folder"
         self.top=tk.Toplevel()
         self.user_input=tk.StringVar(self.top)
         self.top.title("Add Game")
         self.top_label=tk.Label(text="Game name:",master=self.top,font=font_smaller)
         self.top_label.pack()
-        self.top_text=tk.Entry(master=self.top,font=font_smaller,textvariable=self.user_input)
+        self.top_text=tk.Entry(master=self.top,font=font_smaller,textvariable=self.user_input,width=25)
         self.top_text.pack()
-        self.filename=None
-        self.select_folder = tk.Button(self.top, text="Select Game Save folder",command=self.get_folder ,width=20,font=font_smaller)
-        self.select_folder.pack()
-        self.add = tk.Button(self.top, text="Add Game", command=self.verify_answer_add ,width=20,font=font_smaller)
+        self.filename=tk.StringVar(self.top)
+        self.top_text=tk.Entry(master=self.top,font=font_smaller,textvariable=self.filename,width=25)
+        self.top_text.pack()
+        self.isRelativeDir=tk.BooleanVar(master=self.top)
+        self.isRelative=tk.Checkbutton(self.top,text="Is relative (uses home folder)",variable=self.isRelativeDir,font=font_smaller)
+        self.isRelative.pack()
+        self.isSteamVar=tk.BooleanVar(master=self.top)
+        self.isSteam=tk.Checkbutton(self.top,text="Is in steam userdata folder (just enter the appid in save",variable=self.isSteamVar,font=font_smaller)
+        self.isSteam.pack()
+        self.add = tk.Button(self.top, text="Add Game", command=self.verify_answer_add ,width=25,font=font_smaller)
         self.add.pack()
-        self.top_button_dismiss=tk.Button(self.top,text="Dismiss",command=self.top.destroy,font=font_smaller,width=20, fg="red")
+        self.top_button_dismiss=tk.Button(self.top,text="Dismiss",command=self.top.destroy,font=font_smaller,width=25, fg="red")
         self.top_button_dismiss.pack()
     def get_folder(self):
         self.filename=filedialog.askdirectory(title=self.title)
@@ -173,19 +251,23 @@ class Application(tk.Frame):
         elif(self.filename==None):
             messagebox.showerror("Error","You haven't selected a save folder")
         else:
-            if (add_game(self.user_input.get(),self.filename)==True):
-                  messagebox.showinfo("Succes!","Succesfully added "+self.user_input.get())
-                  self.top.destroy()
+
+            if(self.isRelativeDir.get()==True):
+                if (add_game(self.user_input.get(),r"~/"+self.filename.get())==True):
+                    
+                    messagebox.showinfo("Succes!","Succesfully added "+self.user_input.get())
+         
+            elif(self.isSteamVar.get()==True):
+                if(add_steam_game(self.user_input.get(),self.filename.get())):
+                     messagebox.showinfo("Succes!","Succesfully added "+self.user_input.get())
+            else:
+                if (add_game(self.user_input.get(),self.filename.get())==True):
+                    messagebox.showinfo("Succes!","Succesfully added "+self.user_input.get())
+                    
     def backup_window(self):
-        
-        
         self.filename=filedialog.askdirectory(title="Select a backup folder")
         a=backup(self.filename)
-   
-      
         messagebox.showinfo("Succes!","Succesfully backed up "+str(a)+" games")
-    
-
     def remove_game_window(self):
         self.top=tk.Toplevel()
         self.user_input=tk.StringVar(self.top)
@@ -200,6 +282,7 @@ class Application(tk.Frame):
         self.top_button_dismiss=tk.Button(self.top,text="Dismiss",command=self.top.destroy,font=font_smaller,width=20, fg="red")
         self.top_button_dismiss.pack()
     def remove_game(self):
+        a=self.user_input.get()
         if(remove_game(self.user_input.get())==True):
               messagebox.showinfo("Succes!","Succesfully removed game "+str(a))
 
@@ -271,7 +354,7 @@ class Application(tk.Frame):
         self.top_button_donate.pack()
         self.top_button_donate=tk.Button(self.top,text="Open Github page",command=self.github,font=font_smaller,width=20,)
         self.top_button_donate.pack()
-#https://paypal.me/joshuasarlette?locale.x=en_US
+
         self.top_button_dismiss=tk.Button(self.top,text="Dismiss",command=self.top.destroy,font=font_smaller,width=20, fg="red")
         self.top_button_dismiss.pack()
     def create_widgets(self):
@@ -283,6 +366,7 @@ class Application(tk.Frame):
         self.optionsMenu.add_command(label="Restore one game",command=self.restore_game,font=font_smaller)
         self.optionsMenu.add_command(label="Restore every game",command=self.restore_all_games_window,font=font_smaller)
         self.menubar.add_cascade(label="Actions",menu=self.optionsMenu,font=font_smaller)
+        self.menubar.add_cascade(label="Options",command=self.options_window,font=font_smaller)
         self.menubar.add_cascade(label="About",command=self.about_window,font=font_smaller)
         self.master.config(menu=self.menubar)
         self.hi_there = tk.Button(self,width=20,height=4,font=font)
