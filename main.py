@@ -241,6 +241,7 @@ class Application(tk.Frame):
         self.master.minsize(300,150)
         self.pack()
         self.create_widgets()
+
     def checkForUpdates(self):
         if(checkVersion()==True):
             tk.messagebox.showwarning("Newer version available","There is a newer version available of Game Backuper, go on the about tab open github page to download it")
@@ -251,6 +252,7 @@ class Application(tk.Frame):
     def options_save(self):
         config["steamDir"]=self.steamDir.get()
         config["experimental"]=self.experimentalBool.get()
+        config["standardDir"]=self.standardDir.get()
         saveConfig()
         messagebox.showinfo("Succes!","Succesfully saved config")
     def options_window(self):
@@ -266,6 +268,12 @@ class Application(tk.Frame):
         self.top_label=tk.Label(text="Steam userdata directory:",master=self.top,font=font_smaller)
         self.top_label.pack()
         self.top_text_steam=tk.Entry(master=self.top,font=font_smaller,textvariable=self.steamDir,width=25)
+        self.top_text_steam.pack()
+        self.standardDir=tk.StringVar(self.top)
+        self.standardDir.set(config["standardDir"])
+        self.top_label=tk.Label(text="Standard backup dir:",master=self.top,font=font_smaller)
+        self.top_label.pack()
+        self.top_text_steam=tk.Entry(master=self.top,font=font_smaller,textvariable=self.standardDir,width=25)
         self.top_text_steam.pack()
         self.experimentalBool=tk.BooleanVar(master=self.top)
         self.experimentalBool.set(config["experimental"])
@@ -455,7 +463,30 @@ class Application(tk.Frame):
         self.add.pack()
         self.top_button_dismiss=tk.Button(self.top,text="Dismiss",command=self.top.destroy,font=font_smaller,width=20, fg="red")
         self.top_button_dismiss.pack()
+    def manage_games(self):
+        
+        self.top=tk.Toplevel()
+
+        self.top.title("Manage Games")
+    
+        self.listbox = tk.Listbox(self.top,width=40)
+        self.listbox.pack()
+
+        self.listbox.bind('<Double-1>',self.clicked_game)       
+
+        for game in game_list:
+            self.listbox.insert("end", game)
+        self.top_button_dismiss=tk.Button(self.top,text="Dismiss",command=self.top.destroy,font=font_smaller,width=20, fg="red")
+        self.top_button_dismiss.pack()
+    def clicked_game(self,event):
+    
+        self.top=tk.Toplevel()
+        game_name=self.listbox.get(self.listbox.curselection())
+        self.top.title(game_name)
+        self.top_label=tk.Label(text="Save location:\n"+game_list[game_name],master=self.top,font=font_smaller)
+        self.top_label.pack()
     def about_window(self):
+        
         self.top=tk.Toplevel()
 
         self.top.title("About")
@@ -477,6 +508,7 @@ class Application(tk.Frame):
         self.optionsMenu.add_command(label="Restore one game",command=self.restore_game,font=font_smaller)
         if(config["experimental"]):
             self.optionsMenu.add_command(label="Restore every game",command=self.restore_all_games_window,font=font_smaller)
+            self.optionsMenu.add_command(label="Manage Games",command=self.manage_games,font=font_smaller)
         self.menubar.add_cascade(label="Actions",menu=self.optionsMenu,font=font_smaller)
         self.menubar.add_cascade(label="Options",command=self.options_window,font=font_smaller)
         self.menubar.add_cascade(label="About",command=self.about_window,font=font_smaller)
