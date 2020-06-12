@@ -10,14 +10,18 @@ It would be cool if you would add more games to the library so we can support mo
 If you run update game list in the actions menu it will fetch the newest version of the game list. This contains the locations where the saves are stores so better keep this up-to-date. The reason why you need to do it manually is because if you update, all your custom games will be overwritten.
 
 ![screenshot](https://raw.githubusercontent.com/Joshi234/game-backuper/master/screenshots/Screenshot_1.png)
+
 Just press the big backup button and it will ask you for a folder where it should put the backups of the saves
 
 ![screenshot](https://raw.githubusercontent.com/Joshi234/game-backuper/master/screenshots/Screenshot_5.png)
+
 Here you see the different functions you can use.
 
 ![screenshot](https://raw.githubusercontent.com/Joshi234/game-backuper/master/screenshots/Screenshot_2.png)
+
 The add game menu
 
 ![screenshot](https://raw.githubusercontent.com/Joshi234/game-backuper/master/screenshots/Screenshot_4.png)
+
 The options menu
 
