@@ -6,6 +6,7 @@ import shutil
 import tkinter as tk
 from tkinter import filedialog
 from tkinter import messagebox
+from tkinter import ttk
 import webbrowser
 cwd = os.getcwd()
 font=("Arial",20)
@@ -14,9 +15,33 @@ game_list={}
 json_raw=""
 from os.path import expanduser
 home = expanduser("~")
-version="1.3"
-config={"standardDir":None,"version":version,"steamId":None,"steamDir":r"C:\Program Files (x86)\Steam\userdata"}
-defaultConfig={"standardDir":None,"version":version,"steamId":None,"steamDir":r"C:\Program Files (x86)\Steam\userdata"}
+version="1.4"
+config={"standardDir":None,"version":version,"steamId":None,"steamDir":r"C:\Program Files (x86)\Steam\userdata","experimental":False,"technicDir":""}
+defaultConfig={"standardDir":None,"version":version,"steamId":None,"steamDir":r"C:\Program Files (x86)\Steam\userdata","experimental":False,"technicDir":""}
+def technicLauncherSupport(backupDir):
+    #technic dir C:\Users\joshu\AppData\Roaming\.technic\modpacks
+    modpacks=os.listdir(config["technicDir"])
+    for i in modpacks:
+        if(os.path.isdir(config["technicDir"]+r"/"+i)==False):
+            modpacks.remove(i)
+ 
+    json_technic={dir:config["technicDir"]}
+    for i in modpacks:
+        try:
+            shutil.copytree(config["technicDir"]+r"/"+i+"/saves",backupDir+r"/"+i)
+        except:
+            e=0
+        
+        print("Finished copying minecrtaft save "+i)
+    json_technic=modpacks
+    json_raw=json.dumps(json_technic)
+
+
+    open(backupDir+'/technic_launcher.json',"w+").write(json_raw)
+
+
+    
+    
 
 def getSteamUserId():
 
@@ -26,7 +51,7 @@ def getSteamUserId():
 def download_file():
     global game_list
     print("Downloading Game List")
-    file_url = 'https://raw.githubusercontent.com/Joshi234/game-backer/master/game_list.json'
+    file_url = 'https://raw.githubusercontent.com/Joshi234/game-backuper/master/game_list.json'
 
     game_list_raw = requests.get(file_url)
     game_list_raw=game_list_raw.content.decode()
@@ -36,6 +61,8 @@ def download_file():
 
 
     print("Finished!")
+def technicDirSetup():
+    config["technicDir"]=home+r"\AppData\Roaming\.technic\modpacks"
 def save_game_list():
     print("Saving...")
     json_raw=json.dumps(game_list)
@@ -49,11 +76,26 @@ def remove_game(game_name):
             save_game_list()
             return True
     return False
+def checkVersion():
+    
+    print("Checking Version")
+    file_url = 'https://raw.githubusercontent.com/Joshi234/game-backuper/master/version.txt'
+    
+    version_newest = requests.get(file_url)
+    version_newest=version_newest.content.decode()
+
+    if(version_newest!=version):
+        return True
+    else:
+        return False
+
 def first_run():
+
     try:
         open(cwd+'/game_list.json',"r").read()
     except:
         print("This is your first run so we automatically download the current game list and save it to your disk, you update the list by running 'update'")
+        
         download_file()
         save_game_list()
 def add_game(name,dir):
@@ -80,6 +122,7 @@ def loadConfig():
     global config
     config=json.loads(open(cwd+"/config.json","r+").read())
 def backup(dir):
+    technicLauncherSupport(dir)
     a=0
     for i in game_list:
         try:
@@ -156,10 +199,12 @@ def restore(game_name,backup_dir):
             print("Could not find your game "+game_name)
 def resetConfig():
     config=defaultConfig
+    technicDirSetup()
     saveConfig()
 def add_steam_game(name,appId):
     game_list[name]="+"+appId
     save_game_list()
+
 class Application(tk.Frame):
     
     def first_run_wi(self):
@@ -170,6 +215,7 @@ class Application(tk.Frame):
             config=defaultConfig
             try:
                 getSteamUserId()
+                technicDirSetup()
             except:
                 print("Couldn't find Steam User id")
             saveConfig()
@@ -180,6 +226,11 @@ class Application(tk.Frame):
             messagebox.showinfo("Info","Since this is the first time you are running this program we automatically download the newest game list. Later on you can update it with 'update game list'")
             download_file()
             save_game_list()
+        try:
+            self.checkForUpdates()
+        except:
+            print("Couldnt connect to the internet")
+       
     def __init__(self, master=None):
         self.first_run_wi()
         load()
@@ -190,14 +241,16 @@ class Application(tk.Frame):
         self.master.minsize(300,150)
         self.pack()
         self.create_widgets()
-        
+    def checkForUpdates(self):
+        if(checkVersion()==True):
+            tk.messagebox.showwarning("Newer version available","There is a newer version available of Game Backuper, go on the about tab open github page to download it")
     def update_game_list_window(self):
         download_file()
         save_game_list()
         messagebox.showinfo("Succes!","Succesfully updated the game list")
     def options_save(self):
         config["steamDir"]=self.steamDir.get()
-        
+        config["experimental"]=self.experimentalBool.get()
         saveConfig()
         messagebox.showinfo("Succes!","Succesfully saved config")
     def options_window(self):
@@ -210,8 +263,14 @@ class Application(tk.Frame):
         self.select_folder.pack()
         self.steamDir=tk.StringVar(self.top)
         self.steamDir.set(config["steamDir"])
+        self.top_label=tk.Label(text="Steam userdata directory:",master=self.top,font=font_smaller)
+        self.top_label.pack()
         self.top_text_steam=tk.Entry(master=self.top,font=font_smaller,textvariable=self.steamDir,width=25)
         self.top_text_steam.pack()
+        self.experimentalBool=tk.BooleanVar(master=self.top)
+        self.experimentalBool.set(config["experimental"])
+        self.experimental=tk.Checkbutton(self.top,text="Use experimental",variable=self.experimentalBool,font=font_smaller)
+        self.experimental.pack()
         self.select_folder = tk.Button(self.top, text="Reset config",command=resetConfig,width=25,font=font_smaller)
         self.select_folder.pack()
 
@@ -230,6 +289,8 @@ class Application(tk.Frame):
         self.top_text=tk.Entry(master=self.top,font=font_smaller,textvariable=self.user_input,width=25)
         self.top_text.pack()
         self.filename=tk.StringVar(self.top)
+        self.top_label=tk.Label(text="Save directory:",master=self.top,font=font_smaller)
+        self.top_label.pack()
         self.top_text=tk.Entry(master=self.top,font=font_smaller,textvariable=self.filename,width=25)
         self.top_text.pack()
         self.isRelativeDir=tk.BooleanVar(master=self.top)
@@ -263,10 +324,60 @@ class Application(tk.Frame):
             else:
                 if (add_game(self.user_input.get(),self.filename.get())==True):
                     messagebox.showinfo("Succes!","Succesfully added "+self.user_input.get())
+    def backup_progess_bar(self,dir):
+
+        if(config["experimental"]==True):
+            technicLauncherSupport(dir)
+            games_found=0
+            progressbar_length=100
+            self.top=tk.Toplevel()
+            self.progressbar=ttk.Progressbar(self.top,length=progressbar_length,value=0)
+            self.progressbar.pack()
+
+            for i in game_list:
+                try:
                     
+                    if(game_list[i][0]=="~"):
+                        if(os.path.isdir(home+game_list[i][1:],dir+r"\\"+i)):
+                            games_found=+1
+                    elif(game_list[i][0]=="+"):
+                        if(os.path.isdir(config["steamDir"]+r"/"+config["steamId"]+r"/"+game_list[i][1:],dir+r"\\"+i)):
+                            games_found=+1
+                    else:
+                        if(os.path.isdir(game_list[i],dir+r"\\"+i)):
+                            games_found=+1
+                
+                except:
+                    e=0
+
+        a=0
+        for i in game_list:
+            try:
+                
+                if(game_list[i][0]=="~"):
+        
+                    shutil.copytree(home+game_list[i][1:],dir+r"\\"+i)
+                elif(game_list[i][0]=="+"):
+                    
+                    shutil.copytree(config["steamDir"]+r"/"+config["steamId"]+r"/"+game_list[i][1:],dir+r"\\"+i)
+                    
+                else:
+                    shutil.copytree(game_list[i],dir+r"\\"+i)
+                print("Finished copying game save "+i)
+                self.progressbar["value"]=+progressbar_length/games_found
+
+            except:
+                e=0
+        if(a==0):
+            print("Invalid File Location or no game installed that is currently supported")
+        else:
+            
+            print("Succesfully copied "+str(a)+" games")
+        return a
     def backup_window(self):
         self.filename=filedialog.askdirectory(title="Select a backup folder")
-        a=backup(self.filename)
+
+        a=self.backup_progess_bar(self.filename)
         messagebox.showinfo("Succes!","Succesfully backed up "+str(a)+" games")
     def remove_game_window(self):
         self.top=tk.Toplevel()
@@ -364,7 +475,8 @@ class Application(tk.Frame):
         self.optionsMenu.add_command(label="Add game",command=self.add_game_window,font=font_smaller)
         self.optionsMenu.add_command(label="Remove game",command=self.remove_game_window,font=font_smaller)
         self.optionsMenu.add_command(label="Restore one game",command=self.restore_game,font=font_smaller)
-        self.optionsMenu.add_command(label="Restore every game",command=self.restore_all_games_window,font=font_smaller)
+        if(config["experimental"]):
+            self.optionsMenu.add_command(label="Restore every game",command=self.restore_all_games_window,font=font_smaller)
         self.menubar.add_cascade(label="Actions",menu=self.optionsMenu,font=font_smaller)
         self.menubar.add_cascade(label="Options",command=self.options_window,font=font_smaller)
         self.menubar.add_cascade(label="About",command=self.about_window,font=font_smaller)
