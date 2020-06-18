@@ -20,22 +20,43 @@ config={"standardDir":None,"version":version,"steamId":None,"steamDir":r"C:\Prog
 defaultConfig={"standardDir":None,"version":version,"steamId":None,"steamDir":r"C:\Program Files (x86)\Steam\userdata","experimental":False,"technicDir":""}
 
 def technicLauncherSupport(backupDir):
+    try:
+        #technic dir C:\Users\joshu\AppData\Roaming\.technic\modpacks
+        modpacks=os.listdir(config["technicDir"])
+        for i in modpacks:
+            if(os.path.isdir(config["technicDir"]+r"/"+i)==False):
+                modpacks.remove(i)
+        json_technic={dir:config["technicDir"]}
+        for i in modpacks:
+            try:
+                shutil.copytree(config["technicDir"]+r"/"+i+"/saves",backupDir+r"/"+i)
+            except:
+                e=0
+            print("Finished copying minecrtaft save "+i)
+        json_technic=modpacks
+        json_raw=json.dumps(json_technic)
+        open(backupDir+'/technic_launcher.json',"w+").write(json_raw)
+    except:
+        print("Error while procesing technic launcher modpacks")
+    
+def twitchMcSupport(backupDir):
     #technic dir C:\Users\joshu\AppData\Roaming\.technic\modpacks
-    modpacks=os.listdir(config["technicDir"])
+    path=home+r"Twitch\Minecraft\Instances"
+    modpacks=os.listdir(path)
     for i in modpacks:
-        if(os.path.isdir(config["technicDir"]+r"/"+i)==False):
+        if(os.path.isdir(path+r"/"+i)==False):
             modpacks.remove(i)
-    json_technic={dir:config["technicDir"]}
+    json_technic={dir:path}
     for i in modpacks:
         try:
-            shutil.copytree(config["technicDir"]+r"/"+i+"/saves",backupDir+r"/"+i)
+            shutil.copytree(path+r"/"+i+"/saves",backupDir+r"/"+i)
         except:
             e=0
         print("Finished copying minecrtaft save "+i)
     json_technic=modpacks
     json_raw=json.dumps(json_technic)
-    open(backupDir+'/technic_launcher.json',"w+").write(json_raw)
-
+    open(backupDir+'/twitch_launcher.json',"w+").write(json_raw)
+#
 def getSteamUserId():
     config['steamId']=os.listdir(r"C:\Program Files (x86)\Steam\userdata")[0]
     saveConfig()
@@ -113,7 +134,7 @@ def loadConfig():
     config=json.loads(open(cwd+"/config.json","r+").read())
 
 def backup(dir):
-    technicLauncherSupport(dir)
+
     a=0
     for i in game_list:
         try:
@@ -180,6 +201,36 @@ def restore(game_name,backup_dir):
             
         except:
             print("Could not find your game "+game_name)
+def deleteSave(game_name):
+
+        game_list[game_name]
+        if(game_list[game_name][0]=="~"):
+            
+                try:
+                    
+                    shutil.rmtree(home+game_list[game_name][1:])
+                except:
+                    p=0
+
+        elif(game_list[game_name][0]=="+"):
+       
+                try:
+                    shutil.rmtree(config["steamDir"]+r"/"+config["steamId"]+r"/"+game_list[game_name][1:])
+                except:
+                    p=0
+
+                else:
+                    print("Cant find backup folder or backup")
+                
+        else:
+       
+                try:
+                    shutil.rmtree(home+game_list[game_name])
+                except:
+                    p=0
+
+                else:
+                    print("Cant find backup folder or backup")
 
 def resetConfig():
     config=defaultConfig
@@ -259,6 +310,8 @@ class Application(tk.Frame):
         self.top_label.pack()
         self.top_text_steam=tk.Entry(master=self.top,font=font_smaller,textvariable=self.standardDir,width=25)
         self.top_text_steam.pack()
+        self.select_folder = tk.Button(self.top, text="Set default dir",command=self.setStandardDir ,width=25,font=font_smaller)
+        self.select_folder.pack()
         self.experimentalBool=tk.BooleanVar(master=self.top)
         self.experimentalBool.set(config["experimental"])
         self.experimental=tk.Checkbutton(self.top,text="Use experimental",variable=self.experimentalBool,font=font_smaller)
@@ -297,7 +350,11 @@ class Application(tk.Frame):
 
     def get_folder(self):
         self.filename=filedialog.askdirectory(title=self.title)
-
+    def setStandardDir(self):
+        self.title="Select default backup dir where your games should be saves"
+        self.get_folder()
+        config["standardDir"]=self.filename
+        saveConfig()
     def verify_answer_add(self):
 
         if (self.user_input.get()==""):
@@ -320,12 +377,10 @@ class Application(tk.Frame):
 
     def backup_progess_bar(self,dir):
         if(config["experimental"]==True):
-            technicLauncherSupport(dir)
+   
             games_found=0
             progressbar_length=100
-            self.top=tk.Toplevel()
-            self.progressbar=ttk.Progressbar(self.top,length=progressbar_length,value=0)
-            self.progressbar.pack()
+
 
             for i in game_list:
                 try:
@@ -366,11 +421,11 @@ class Application(tk.Frame):
         else:
             
             print("Succesfully copied "+str(a)+" games")
-        return a
+        return games_found
 
     def backup_window(self):
         self.filename=filedialog.askdirectory(title="Select a backup folder")
-        a=self.backup_progess_bar(self.filename)
+        a=backup(self.filename)
         messagebox.showinfo("Succes!","Succesfully backed up "+str(a)+" games")
 
     def remove_game_window(self):
@@ -492,10 +547,8 @@ class Application(tk.Frame):
                 os.mkdir(config["standardDir"]+r"/box"+str(boxId))
         else:
             self.title="Please select a folder where your saves should be saved"
-            self.get_folder()
-            config["standardDir"]=self.filename
-            print(self.filename)
-            saveConfig()
+            self.setStandardDir()
+           
     
     def clicked_game(self,event):
         
@@ -521,6 +574,8 @@ class Application(tk.Frame):
                                     self.top_button_dismiss.pack()
                         except:
                             e=0
+                    self.top_button_dismiss=tk.Button(self.top,text="Delete Save",command=lambda: deleteSave(game_name),font=font_smaller,width=20)
+                    self.top_button_dismiss.pack()
         except:
             a=False
         if(a==False):
